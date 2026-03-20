@@ -5,6 +5,10 @@
 <title>POWER SHUTDOWN MANAGEMENT APP - AREA-IV</title>
 
 <style>
+table{
+  width:100%;
+  min-width:900px; /* ✅ PC view fix */
+}
 body{
   font-family:"Segoe UI",Roboto,Arial;
   background:#f1f3f6;
@@ -195,6 +199,7 @@ h3{
   <button onclick="window.location.href='plan.html'">
  📅 PLAN SHUTDOWN ENTRY
 </button>
+
 <div class="card hidden" id="historyBox">
   <h3>📊 Shutdown History</h3>
 
@@ -229,8 +234,7 @@ h3{
     </table>
   </div>
 
-  <button class="btn-back" onclick="backToMain()">Back</button>
-</div></div>
+ </div></div>
 
 </div>
 
@@ -247,6 +251,7 @@ h3{
 </select>
 <textarea id="sd_info" placeholder="Information"></textarea>
 <button class="btn-shutdown" onclick="submitShutdown()">Submit</button>
+<button class="btn-back" onclick="backToMain()">Back</button>
   </div>
 
 <div class="card hidden" id="resumeBox">
@@ -496,20 +501,69 @@ function shareResumeWhatsApp(){
 
 // ✅ HISTORY
 function loadHistory(){
- fetch(CSV_URL+"&t="+Date.now())
- .then(r=>r.text())
- .then(t=>{
-  const rows=t.split("\n").map(r=>r.split(","));
-  rows.shift();
 
-  let html="";
-  rows.reverse().forEach(r=>{
-   html+=`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td>
-   <td>${r[3]}</td><td>${r[9]}</td><td>${r[10]}</td><td>${r[5]}</td></tr>`;
+  fetch(CSV_URL + "&t=" + Date.now())
+  .then(r => r.text())
+  .then(t => {
+
+    const rows = t.split("\n").map(r => r.split(",").map(x => x.replace(/"/g,"").trim()));
+    const h = rows.shift().map(x => x.toUpperCase());
+
+    // ✅ AUTO COLUMN DETECTION (BUG FIX)
+    const i = {
+      feeder: h.findIndex(x => x.includes("FEEDER")),
+      sd:     h.findIndex(x => x.includes("SHUTDOWN")),
+      rs:     h.findIndex(x => x.includes("RESUME")),
+      type:   h.findIndex(x => x.includes("TYPE")),
+      inst:   h.findIndex(x => x.includes("INSTALL")),
+      hrs:    h.findIndex(x => x.includes("HRS")),
+      loss:   h.findIndex(x => x.includes("LOSS"))
+    };
+
+    let filter = document.getElementById("historyFilter").value;
+
+    let html = "";
+
+    let now = new Date();
+    let oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(now.getMonth() - 1); // ✅ LAST 1 MONTH
+
+    rows.reverse().forEach(r => {
+
+      const feeder = r[i.feeder];
+      const sd     = r[i.sd];
+      const rs     = r[i.rs];
+      const type   = r[i.type];
+      const inst   = r[i.inst];
+      const hrs    = parseFloat(r[i.hrs]) || 0;
+      const loss   = parseFloat(r[i.loss]) || 0;
+
+      if(!feeder || !sd) return;
+
+      // ✅ DATE FILTER (LAST 1 MONTH)
+      let sdDate = new Date(sd);
+      if(sdDate < oneMonthAgo) return;
+
+      // ✅ INSTALLATION FILTER
+      if(filter !== "ALL" && inst !== filter) return;
+      if(!CURRENT_USER.admin && inst !== CURRENT_USER.i) return;
+
+      html += `
+      <tr style="border-bottom:1px solid #ddd;">
+        <td>${feeder}</td>
+        <td>${sd}</td>
+        <td>${rs || "-"}</td> <!-- ✅ FIXED -->
+        <td>${type}</td>
+        <td>${hrs}</td>
+        <td>${loss}</td>
+        <td>${inst}</td>
+      </tr>`;
+    });
+
+    document.querySelector("#historyTable tbody").innerHTML = html || 
+    `<tr><td colspan="7">No Data (Last 1 Month)</td></tr>`;
+
   });
-
-  document.querySelector("#historyTable tbody").innerHTML=html;
- });
 }
 
 // ✅ AUTO REFRESH
