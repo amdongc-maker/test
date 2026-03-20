@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>POWER SHUTDOWN MANAGEMENT APP - AREA-IV</title>
+
+<style>
+body{
+  font-family:"Segoe UI",Roboto,Arial;
+  background:#f1f3f6;
+  margin:0;
+}
+header{
+  background:#1f3a5f;
+  color:#fff;
+  padding:14px 18px;
+  font-size:18px;
+  font-weight:600;
+  text-align:center;
+}
+.container{
+  padding:16px;
+  max-width:480px;
+  margin:auto;
+}
+.card{margin-bottom:20px}
+h2,h3{
+  margin:12px 0;
+  color:#1f3a5f;
+  text-align:center;
+}
+input,select,textarea{
+  width:100%;
+  padding:12px;
+  margin-top:6px;
+  border-radius:10px;
+  border:1px solid #dcdfe4;
+  font-size:15px;
+}
+button{
+  width:100%;
+  padding:14px;
+  margin-top:14px;
+  font-size:16px;
+  font-weight:600;
+  border:none;
+  border-radius:14px;
+  cursor:pointer;
+}
+.btn-login{background:#1f3a5f;color:#fff}
+.btn-shutdown{background:#e74c3c;color:#fff}
+.btn-resume{background:#27ae60;color:#fff}
+.btn-back{background:#7f8c8d;color:#fff}
+.hidden{display:none}
+.shutdown-item{
+  background:#fff;
+  border-radius:16px;
+  padding:18px;
+  margin-bottom:14px;
+  box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
+.shutdown-row{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:8px;
+  font-size:14px;
+}
+.shutdown-label{color:#6b7280;font-weight:600}
+.shutdown-value{font-weight:700}
+.install-badge{
+  padding:4px 12px;
+  border-radius:999px;
+  background:#e5f0ff;
+  color:#1f3a5f;
+  font-size:12px;
+  font-weight:700;
+}
+#msg{text-align:center;margin-top:10px;font-weight:600}
+table th, table td{
+  padding:8px;
+  text-align:center;
+}
+/* ACTION BUTTON ROW */
+.action-row{
+  display:flex;
+  gap:10px;
+  margin-top:10px;
+}
+
+/* SMALL BUTTONS */
+.small-btn{
+  flex:1;
+  padding:10px;
+  font-size:14px;
+  border-radius:10px;
+}
+
+/* PLAN BUTTON FIX */
+.plan-btn{
+  margin-top:10px;
+  padding:10px;
+  font-size:14px;
+  border-radius:10px;
+}
+
+/* TABLE IMPROVEMENT */
+table{
+  background:#fff;
+  border-radius:10px;
+  overflow:hidden;
+}
+
+table th{
+  font-size:13px;
+}
+
+table td{
+  font-size:12px;
+}
+
+/* SUMMARY BOX */
+#summaryBox{
+  background:#fff;
+  padding:10px;
+  border-radius:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,.05);
+}
+
+/* FILTER DROPDOWN */
+#historyFilter{
+  margin-top:8px;
+  font-size:14px;
+}
+
+/* CARD IMPROVEMENT */
+.card{
+  margin-bottom:16px;
+}
+
+/* HEADER TIGHT */
+h2{
+  font-size:16px;
+}
+h3{
+  font-size:15px;
+}
+</style>
+</head>
+
+<body>
+<header>POWER SHUTDOWN MANAGEMENT APP - AREA-IV</header>
+<div id="userInfo" class="hidden" style="
+  background:#ffffff;
+  margin:10px 16px;
+  padding:10px 14px;
+  border-radius:12px;
+  box-shadow:0 4px 10px rgba(0,0,0,.06);
+  text-align:center;
+">
+  <div style="font-size:15px;font-weight:700;color:#1f3a5f" id="ui_name"></div>
+  <div style="font-size:13px;color:#6b7280" id="ui_inst"></div>
+</div>
+
+<div class="container">
+
+<div class="card" id="loginBox">
+
+<!-- ONGC LOGO -->
+<div style="text-align:center;margin-bottom:12px;">
+  <img 
+    src="Logo.png"
+    alt="ONGC Logo"
+    style="
+      width:120px;
+      background:#fff;
+      padding:8px;
+      border-radius:12px;
+      box-shadow:0 4px 10px rgba(0,0,0,.15);
+    ">
+</div>
+<h3>USER LOGIN</h3>
+<input id="loginUser" placeholder="Username">
+<input type="password" id="loginPass" placeholder="Password">
+<button class="btn-login" onclick="login()">Login</button>
+</div>
+
+<div class="card hidden" id="mainBox">
+<h2>ACTIVE SHUTDOWN FEEDERS</h2>
+<div id="activeShutdowns">Loading...</div>
+<div class="action-row">
+  <button class="btn-shutdown small-btn" onclick="openShutdown()">Shutdown</button>
+  <button class="btn-resume small-btn" onclick="openResume()">Resume</button>
+</div>
+  <div class="container">
+  <button onclick="window.location.href='plan.html'">
+ 📅 PLAN SHUTDOWN ENTRY
+</button>
+<div class="card hidden" id="historyBox">
+  <h3>📊 Shutdown History</h3>
+
+  <!-- FILTER -->
+  <select id="historyFilter" onchange="loadHistory()">
+    <option value="ALL">ALL INSTALLATIONS</option>
+    <option>LIMBODARA-GGS-1</option>
+    <option>LIMBODARA-GGS-2</option>
+    <option>GAMIJ-GGS-1</option>
+    <option>GAMIJ-GGS-2</option>
+    <option>GAMIJ-GGS-3</option>
+    <option>MOTERA-GGS</option>
+  </select>
+
+  <!-- SUMMARY -->
+  <div id="summaryBox" style="margin-top:10px;font-size:13px;"></div>
+
+  <div style="overflow:auto;">
+    <table id="historyTable" style="width:100%; border-collapse:collapse; font-size:13px;">
+      <thead style="background:#1f3a5f;color:#fff;">
+        <tr>
+          <th>Feeder</th>
+          <th>Shutdown</th>
+          <th>Resume</th>
+          <th>Type</th>
+          <th>Hrs</th>
+          <th>Loss</th>
+          <th>Inst</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <button class="btn-back" onclick="backToMain()">Back</button>
+</div></div>
+
+</div>
+
+<div class="card hidden" id="shutdownBox">
+<h3>Shutdown Entry</h3>
+<select id="sd_feeder"></select>
+<input type="datetime-local" id="sd_time">
+<select id="sd_type">
+<option value="">Select Type</option>
+<option>PLAN PSD</option>
+<option>PARTIAL PLAN PSD</option>
+<option>UNPLAN PSD</option>
+<option>PARTIAL UNPLAN PSD</option>
+</select>
+<textarea id="sd_info" placeholder="Information"></textarea>
+<button class="btn-shutdown" onclick="submitShutdown()">Submit</button>
+  </div>
+
+<div class="card hidden" id="resumeBox">
+<h3>Resume Entry</h3>
+<select id="rs_feeder"></select>
+<input type="datetime-local" id="rs_time">
+<input id="rs_loss" type="number" placeholder="Production Loss" inputmode="numeric" min="0">
+<input id="rs_dg" type="number" placeholder="DG Deployed" inputmode="numeric" min="0">
+<textarea id="rs_rem" placeholder="Actual Reason"></textarea>
+<button class="btn-resume" onclick="submitResume()">Submit</button>
+<button id="resumeShareBtn"
+  class="btn-resume hidden"
+  onclick="shareResumeWhatsApp()">
+  📲 Share Resume on WhatsApp
+</button>
+<button class="btn-back" onclick="backToMain()">Back</button>
+</div>
+
+<div id="msg"></div>
+</div>
+
+<script>
+const WEBAPP_URL="https://script.google.com/macros/s/AKfycbz1g6vziMziteLRvxrVRtVr-xUOFdLrpDN4OqoiaDEv-c2h1-fUHk9nq2LueN4XuHHsKQ/exec";
+const CSV_URL="https://docs.google.com/spreadsheets/d/12Vb60sr_ApZ6JBpE2D_nZweJhTk7DLDEf9XHfpIbJzQ/export?format=csv";
+const USERS=[
+ {u:"121318",p:"admin123",n:"SYSTEM ADMIN",i:"ALL",admin:true},
+ {u:"95606",p:"*ongc123",n:"SUDHIR SINGH",i:"ALL",admin:true},
+ {u:"95843",p:"*ongc123",n:"DIPAK MEDAK",i:"ALL",admin:true},
+ {u:"82653",p:"*ongc123",n:"SHANTILAL RATHWA",i:"ALL",admin:true},
+ {u:"82051",p:"*ongc123",n:"HEMENDRA KUMAR",i:"ALL",admin:true},
+ {u:"96490",p:"*ongc123",n:"AVINAV KUMAR",i:"ALL",admin:true},
+ {u:"124569",p:"1234",n:"KULDIP KHAROLIA",i:"LIMBODARA-GGS-1"},
+ {u:"133668",p:"1234",n:"DIPAK MAURYA",i:"LIMBODARA-GGS-1"},
+ {u:"124470",p:"1234",n:"SANDESH BHARDWAJ",i:"LIMBODARA-GGS-2"},
+ {u:"135597",p:"1234",n:"KUNAL RANJAN",i:"LIMBODARA-GGS-2"},
+ {u:"139938",p:"1234",n:"HAREKRISHNA",i:"LIMBODARA-GGS-2"},
+ {u:"125223",p:"1234",n:"SUKUMAR LAHA",i:"GAMIJ-GGS-1"},
+ {u:"139646",p:"1234",n:"RAVI KUMAR SHARMA",i:"GAMIJ-GGS-1"},
+ {u:"137317",p:"1234",n:"SONUKUMAR SINGH",i:"GAMIJ-GGS-1"},
+ {u:"121028",p:"1234",n:"ABHISHEK PATEL",i:"GAMIJ-GGS-2"},
+ {u:"133181",p:"1234",n:"KETUL PATEL",i:"GAMIJ-GGS-2"},
+ {u:"123310",p:"1234",n:"DHEERENDRA SINGH",i:"GAMIJ-GGS-3"},
+ {u:"133643",p:"1234",n:"ASHUTOSH KUMAR SINGH",i:"GAMIJ-GGS-3"},
+ {u:"135515",p:"1234",n:"ADITYA ARYA",i:"GAMIJ-GGS-3"},
+ {u:"130594",p:"1234",n:"MAHESH GAJJAR",i:"MOTERA-GGS"}
+];
+
+const FEEDERS={
+ "LIMBODARA-GGS-1":["AKASH CERAMIC FEEDER","ITLA ONGC FEEDER-LG1","MANSA CITY FEEDER","MANSA CIVIL FEEDER"],
+"LIMBODARA-GGS-2":["ITLA ONGC FEEDER-LG2","KIRTIDHAM FEEDER","LISA FEEDER","MAHAKALI FEEDER","MUBARAKPUR FEEDER","NETRA FEEDER","ROYAL FEEDER","TIRUPATI FEEDER","VARDAYINI FEEDER"],
+"GAMIJ-GGS-1":["BAHIYAL ONGC FEEDER","RAM FEEDER-GAMIJ-1","SOMNATH JGY FEEDER","NAYRA JGY FEEDER","VASNA RATHOD FEEDER"],
+"GAMIJ-GGS-2":["BADARPUR FEEDER","CHAULAJ FEEDER-GAMIJ-2","GADWEL FEEDER","KASHTABHANJAN FEEDER","RAM FEEDR-GAMIJ-2"],
+"GAMIJ-GGS-3":["BADARPUR FEEDER","CHAULAJ FFEDER-GAMIJ-2","GADWEL FEEDER","KASHTABHANJAN FEEDER","RAM FEEDR-GAMIJ-2","BARMUVADA FEEDER","CHAULAJ FEEDER-GAMIJ-3","FINAV FEEEDER","FUDAL MATA FEEDER","GAYATRI FEEDER","GINJAR FEEDER","HALDARWAS FEEDER-GAMIJ-3","HALDARWAS FEEDER-GAMIJ-4","KALPSAR FEEDER","SATRUNDA FEEDER-GAMIJ-3","SATRUNDA FEEDER-GAMIJ-4","SIHUNJ FEEDER","VANSOLI FEEDER"],
+"MOTERA-GGS":["PREKSHA BHARTI INFOCITY FEEDER","TP-44 FEEDER","ZUNDAL AG FEEDER"],
+"ALL":["AKASH CERAMIC FEEDER","ITLA ONGC FEEDER-LG1","MANSA CITY FEEDER","MANSA CIVIL FEEDER",
+ "ITLA ONGC FEEDER-LG2","KIRTIDHAM FEEDER","LISA FEEDER","MAHAKALI FEEDER",
+ "MUBARAKPUR FEEDER","NETRA FEEDER","ROYAL FEEDER","TIRUPATI FEEDER","VARDAYINI FEEDER",
+ "BAHIYAL ONGC FEEDER","RAM FEEDER-GAMIJ-1","SOMNATH JGY FEEDER","NAYRA JGY FEEDER",
+ "VASNA RATHOD FEEDER","BADARPUR FEEDER","CHAULAJ FFEDER-GAMIJ-2","GADWEL FEEDER",
+ "KASHTABHANJAN FEEDER","RAM FEEDR-GAMIJ-2","BARMUVADA FEEDER",
+ "CHAULAJ FEEDER-GAMIJ-3","FINAV FEEEDER","FUDAL MATA FEEDER","GAYATRI FEEDER",
+ "GINJAR FEEDER","HALDARWAS FEEDER-GAMIJ-3","HALDARWAS FEEDER-GAMIJ-4",
+ "KALPSAR FEEDER","SATRUNDA FEEDER-GAMIJ-3","SATRUNDA FEEDER-GAMIJ-4",
+ "SIHUNJ FEEDER","VANSOLI FEEDER",
+ "PREKSHA BHARTI INFOCITY FEEDER","TP-44 FEEDER","ZUNDAL AG FEEDER"
+]
+};
+
+let CURRENT_USER={}, LAST_SHUTDOWN_TIME={}, LAST_RESUME_DATA=null;
+
+// ✅ SINGLE SPECIAL CHAR FUNCTION
+function hasSpecialChar(text){
+  return !/^[a-zA-Z0-9 \-/]+$/.test(text);
+}
+
+// ✅ LOGIN
+function login(){
+ const u=USERS.find(x=>x.u===loginUser.value && x.p===loginPass.value);
+ if(!u){showMsg("Invalid Login");return;}
+
+ CURRENT_USER=u;
+ localStorage.setItem("CURRENT_USER", JSON.stringify(CURRENT_USER));
+
+ ui_name.innerText="👤 "+CURRENT_USER.n;
+ ui_inst.innerText="Installation : "+CURRENT_USER.i;
+
+ userInfo.classList.remove("hidden");
+ loginBox.classList.add("hidden");
+ mainBox.classList.remove("hidden");
+ historyBox.classList.remove("hidden");
+
+ populateFeeders();
+ loadActiveShutdowns();
+ setTimeout(loadHistory,500);
+}
+
+// ✅ FEEDER LOAD
+function populateFeeders(){
+ sd_feeder.innerHTML=rs_feeder.innerHTML="";
+ (FEEDERS[CURRENT_USER.i]||FEEDERS.ALL).forEach(f=>{
+  sd_feeder.innerHTML+=`<option>${f}</option>`;
+  rs_feeder.innerHTML+=`<option>${f}</option>`;
+ });
+}
+
+// ✅ ACTIVE SHUTDOWN
+function loadActiveShutdowns(){
+ LAST_SHUTDOWN_TIME={};
+
+ fetch(CSV_URL+"&t="+Date.now())
+ .then(r=>r.text())
+ .then(t=>{
+  const rows=t.split("\n").map(r=>r.split(",").map(x=>x.replace(/"/g,"").trim()));
+  const h=rows.shift().map(x=>x.toUpperCase());
+
+  const i={
+   feeder:h.findIndex(x=>x.includes("FEEDER")),
+   sd:h.findIndex(x=>x.includes("SHUTDOWN")),
+   rs:h.findIndex(x=>x.includes("RESUME")),
+   inst:h.findIndex(x=>x.includes("INSTALL")),
+   type:h.findIndex(x=>x.includes("TYPE"))
+  };
+
+  activeShutdowns.innerHTML="";
+  let count=0;
+
+  rows.forEach(r=>{
+   const feeder=r[i.feeder];
+   const sdTime=r[i.sd];
+   const rsTime=r[i.rs];
+   const inst=r[i.inst];
+   const type=r[i.type];
+
+   if(!rsTime || rsTime==="NA"){
+    if(!CURRENT_USER.admin && inst!==CURRENT_USER.i) return;
+
+    LAST_SHUTDOWN_TIME[feeder]=sdTime;
+    count++;
+
+    activeShutdowns.innerHTML+=`
+<div class="shutdown-item">
+  <div class="shutdown-row"><span class="shutdown-label">FEEDER</span><span class="shutdown-value">${feeder}</span></div>
+  <div class="shutdown-row"><span class="shutdown-label">TYPE</span><span class="shutdown-value">${type}</span></div>
+  <div class="shutdown-row"><span class="shutdown-label">TIME</span><span class="shutdown-value">${sdTime}</span></div>
+  <div class="shutdown-row"><span class="shutdown-label">INSTALLATION</span><span class="install-badge">${inst}</span></div>
+
+  <button style="margin-top:10px;width:100%;background:#25D366;color:#fff;border:none;padding:10px;border-radius:10px;font-weight:700;cursor:pointer;"
+    onclick="shareWhatsApp('${feeder}','${type}','${sdTime}','${inst}')">
+    📲 Share on WhatsApp
+  </button>
+</div>`;
+   }
+  });
+
+  if(!count){
+   activeShutdowns.innerHTML=`<div class="shutdown-item" style="text-align:center;color:#27ae60;font-weight:700">
+   ✅ All FEEDERS ARE HEALTHY</div>`;
+  }
+ });
+}
+
+// ✅ SHUTDOWN
+function submitShutdown(){
+ if(!sd_feeder.value||!sd_time.value||!sd_type.value||!sd_info.value){
+  showMsg("All Shutdown fields required");return;
+ }
+ if(hasSpecialChar(sd_info.value)){showMsg("❌ Invalid characters");return;}
+ if(LAST_SHUTDOWN_TIME[sd_feeder.value]){showMsg("Already shutdown");return;}
+
+ fetch(WEBAPP_URL+"?"+new URLSearchParams({
+  action:"shutdown",
+  feeder:sd_feeder.value,
+  ShutdownTime:sd_time.value.replace("T"," "),
+  ShutdownType:sd_type.value,
+  Information:sd_info.value.toUpperCase(),
+  ShutdownEntryBy:CURRENT_USER.n,
+  Installation:CURRENT_USER.i
+ }),{mode:"no-cors"});
+
+ showMsg("Shutdown Submitted");
+ backToMain();
+}
+
+// ✅ RESUME
+function submitResume(){
+ if(!rs_feeder.value||!rs_time.value||!rs_loss.value||!rs_dg.value||!rs_rem.value){
+  showMsg("All fields required");return;
+ }
+ if(hasSpecialChar(rs_rem.value)){showMsg("❌ Invalid characters");return;}
+
+ if(!LAST_SHUTDOWN_TIME[rs_feeder.value]){
+  showMsg("Feeder not found");return;
+ }
+
+ fetch(WEBAPP_URL+"?"+new URLSearchParams({
+  action:"resume",
+  feeder:rs_feeder.value,
+  ResumeTime:rs_time.value.replace("T"," "),
+  ResumeEntryBy:CURRENT_USER.n,
+  TotalProdLoss:rs_loss.value,
+  DGDeployed:rs_dg.value,
+  Remarks:rs_rem.value
+ }),{mode:"no-cors"});
+
+ LAST_RESUME_DATA={
+  feeder:rs_feeder.value,
+  resumeTime:rs_time.value,
+  dg:rs_dg.value,
+  reason:rs_rem.value,
+  user:CURRENT_USER.n,
+  inst:CURRENT_USER.i
+ };
+
+ document.getElementById("resumeShareBtn").classList.remove("hidden");
+ showMsg("Resume Submitted");
+}
+
+// ✅ NAVIGATION
+function openShutdown(){mainBox.classList.add("hidden");shutdownBox.classList.remove("hidden");}
+function openResume(){mainBox.classList.add("hidden");resumeBox.classList.remove("hidden");}
+function backToMain(){
+ shutdownBox.classList.add("hidden");
+ resumeBox.classList.add("hidden");
+ mainBox.classList.remove("hidden");
+ historyBox.classList.remove("hidden");
+ loadActiveShutdowns();
+ loadHistory();
+}
+
+// ✅ MESSAGE
+function showMsg(t){msg.innerText=t;setTimeout(()=>msg.innerText="",3000);}
+
+// ✅ WHATSAPP
+function shareWhatsApp(f,t,time,i){
+ window.open("https://wa.me/?text="+encodeURIComponent(
+  `⚡ POWER SHUTDOWN\nFeeder: ${f}\nType: ${t}\nTime: ${time}\nInst: ${i}`
+ ),"_blank");
+}
+
+function shareResumeWhatsApp(){
+ if(!LAST_RESUME_DATA){showMsg("No data");return;}
+ let d=LAST_RESUME_DATA;
+ window.open("https://wa.me/?text="+encodeURIComponent(
+  `✅ RESUME\nFeeder: ${d.feeder}\nTime: ${d.resumeTime}\nDG: ${d.dg}\nReason: ${d.reason}`
+ ),"_blank");
+}
+
+// ✅ HISTORY
+function loadHistory(){
+ fetch(CSV_URL+"&t="+Date.now())
+ .then(r=>r.text())
+ .then(t=>{
+  const rows=t.split("\n").map(r=>r.split(","));
+  rows.shift();
+
+  let html="";
+  rows.reverse().forEach(r=>{
+   html+=`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td>
+   <td>${r[3]}</td><td>${r[9]}</td><td>${r[10]}</td><td>${r[5]}</td></tr>`;
+  });
+
+  document.querySelector("#historyTable tbody").innerHTML=html;
+ });
+}
+
+// ✅ AUTO REFRESH
+setInterval(()=>{
+ loadActiveShutdowns();
+ loadHistory();
+},30000);
+
+// ✅ ONLOAD FIXED (ONLY ONE)
+window.onload=()=>{
+ checkTomorrowOnIndex();
+
+ document.querySelectorAll("textarea, input[type=text]").forEach(el=>{
+  el.addEventListener("input",()=>{
+   el.value=el.value.replace(/[^a-zA-Z0-9 \-/]/g,"");
+  });
+ });
+};
+</script>
+</body>
+</html>
